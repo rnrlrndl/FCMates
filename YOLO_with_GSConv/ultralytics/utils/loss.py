@@ -14,6 +14,48 @@ from ultralytics.utils.torch_utils import autocast
 from .metrics import bbox_iou, probiou
 from .tal import bbox2dist
 
+class MutualFeatureLevelsLoss(nn.Module):
+    """MFL = Discriminative + λ·Diversity."""
+
+    def __init__(self, *, alpha: float = 1.0, beta: float = 0.5, gamma: float = 0.5, lambda_div: float = 1.0):
+        super().__init__()
+        self.alpha, self.beta, self.gamma, self.lambda_div = alpha, beta, gamma, lambda_div
+        self.bce = nn.BCEWithLogitsLoss(reduction="mean")
+
+    # ‣ Utility
+    @staticmethod
+    def _flatten_feat(f: torch.Tensor) -> torch.Tensor:  # (B,C,H,W) → (B,C)
+        return F.adaptive_max_pool2d(f, 1).view(f.size(0), -1)
+
+    @staticmethod
+    def _cos_sim(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        a, b = F.normalize(a, dim=1), F.normalize(b, dim=1)
+        return (a * b).sum(1).mean()
+
+    # ‣ Diversity
+    def _diversity(self, f_low, f_mid, f_high):
+        fl, fm, fh = map(self._flatten_feat, (f_low, f_mid, f_high))
+        s_lh = self._cos_sim(fl, fh)
+        s_lm = self._cos_sim(fl, fm)
+        s_mh = self._cos_sim(fm, fh)
+        return self.alpha * s_lh - self.beta * s_lm - self.gamma * s_mh
+
+    # ‣ Discriminative
+    def _discriminative(self, feats: List[torch.Tensor], labels: torch.Tensor):
+        labels = labels.float().unsqueeze(1)  # (B,1)
+        loss = 0.0
+        for f in feats:
+            logit = F.adaptive_avg_pool2d(f.amax(1, keepdim=True), 1).view(f.size(0), -1)
+            loss += self.bce(logit, labels)
+        return loss / len(feats)
+
+    # ‣ Forward
+    def forward(self, f_low, f_mid, f_high, labels):
+        return self._discriminative([f_low, f_mid, f_high], labels) + self.lambda_div * self._diversity(
+            f_low, f_mid, f_high
+        )
+
+
 class VarifocalLoss(nn.Module):
     """
     Varifocal loss by Zhang et al.
@@ -190,10 +232,6 @@ class KeypointLoss(nn.Module):
         return (kpt_loss_factor.view(-1, 1) * ((1 - torch.exp(-e)) * kpt_mask)).mean()
 
 
-class MFLoss(nn.Module):
-    def __init__(self):
-
-
 class v8DetectionLoss:
     """Criterion class for computing training losses for YOLOv8 object detection."""
 
@@ -216,6 +254,9 @@ class v8DetectionLoss:
         self.assigner = TaskAlignedAssigner(topk=tal_topk, num_classes=self.nc, alpha=0.5, beta=6.0)
         self.bbox_loss = BboxLoss(m.reg_max).to(device)
         self.proj = torch.arange(m.reg_max, dtype=torch.float, device=device)
+
+        self.mfl = MutualFeatureLevelsLoss()
+        self.mfl_w = getattr(h, "mfl", 1.0)
 
     def preprocess(self, targets: torch.Tensor, batch_size: int, scale_tensor: torch.Tensor) -> torch.Tensor:
         """Preprocess targets by converting to tensor format and scaling coordinates."""
@@ -292,6 +333,14 @@ class v8DetectionLoss:
             loss[0], loss[2] = self.bbox_loss(
                 pred_distri, pred_bboxes, anchor_points, target_bboxes, target_scores, target_scores_sum, fg_mask
             )
+
+        # MFL loss
+        if self.mfl_w > 0:
+            img_labels = mask_gt.any(2).any(1).float()  # (B,)
+            # Feature order: P3(low), P4(mid), P5(high)
+            mfl_term = self.mfl(feats[0], feats[1], feats[2], img_labels) * self.mfl_w
+            loss[1] += mfl_term  # add to class component
+
 
         loss[0] *= self.hyp.box  # box gain
         loss[1] *= self.hyp.cls  # cls gain
