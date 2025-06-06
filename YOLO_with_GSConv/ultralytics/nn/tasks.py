@@ -108,7 +108,11 @@ class BaseModel(nn.Module):
         """
         if isinstance(x, dict):  # for cases of training and validating while training.
             return self.loss(x, *args, **kwargs)
-        return self.predict(x, *args, **kwargs)
+        if self.training:
+            preds, feats = self._predict_once(x, *args, return_feats=True, **kwargs)
+            return preds, feats          # ← Loss 로 feats 전달
+        else:
+            return self._predict_once(x, *args, **kwargs)
 
     def predict(self, x, profile=False, visualize=False, augment=False, embed=None):
         """
@@ -128,7 +132,8 @@ class BaseModel(nn.Module):
             return self._predict_augment(x)
         return self._predict_once(x, profile, visualize, embed)
 
-    def _predict_once(self, x, profile=False, visualize=False, embed=None):
+    #return_feats=false추가가
+    def _predict_once(self, x, profile=False, visualize=False, embed=None, return_feats=False):
         """
         Perform a forward pass through the network.
 
@@ -155,7 +160,13 @@ class BaseModel(nn.Module):
                 embeddings.append(nn.functional.adaptive_avg_pool2d(x, (1, 1)).squeeze(-1).squeeze(-1))  # flatten
                 if m.i == max(embed):
                     return torch.unbind(torch.cat(embeddings, 1), dim=0)
-        return x
+        #아래6줄추가가
+        if return_feats:
+            detect_layer = self.model[-1]
+            neck_feats   = [y[j] for j in detect_layer.f]  # P3·P4·P5
+            return x, neck_feats                    # (preds, features)
+        else:
+            return x
 
     def _predict_augment(self, x):
         """Perform augmentations on input image x and return augmented inference."""
