@@ -255,8 +255,8 @@ class v8DetectionLoss:
         self.bbox_loss = BboxLoss(m.reg_max).to(device)
         self.proj = torch.arange(m.reg_max, dtype=torch.float, device=device)
 
-        self.mfl = MutualFeatureLevelsLoss()
-        self.mfl_w = getattr(h, "mfl", 1.0)
+        self.mfl_loss   = MutualFeatureLevelsLoss()   # MFL module
+        self.lambda_mfl = 1.0
 
     def preprocess(self, targets: torch.Tensor, batch_size: int, scale_tensor: torch.Tensor) -> torch.Tensor:
         """Preprocess targets by converting to tensor format and scaling coordinates."""
@@ -335,10 +335,12 @@ class v8DetectionLoss:
             )
 
         # MFL loss
-        if self.mfl_w > 0:
+        if self.lambda_mfl > 0:
             img_labels = mask_gt.any(2).any(1).float()  # (B,)
             # Feature order: P3(low), P4(mid), P5(high)
             mfl_term = self.mfl(feats[0], feats[1], feats[2], img_labels) * self.mfl_w
+            #아래한줄추가가
+            mfl_term = mfl_term * self.lambda_mfl
             loss[1] += mfl_term  # add to class component
 
 
@@ -347,6 +349,8 @@ class v8DetectionLoss:
         loss[2] *= self.hyp.dfl  # dfl gain
 
         return loss * batch_size, loss.detach()  # loss(box, cls, dfl)
+
+
 
 
 class v8SegmentationLoss(v8DetectionLoss):
