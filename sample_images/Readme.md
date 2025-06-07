@@ -1,5 +1,4 @@
 ## Citation
-- - -
 @misc {
 damaged-signs-multi-label_dataset,
 title = { Damaged Signs Multi-label Dataset },
