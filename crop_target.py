@@ -9,7 +9,6 @@ import numpy as np
 # YOLO 모델
 model = YOLO('yolov8n.pt')
 
-
 # UNet 모델
 # unet_model =
 
@@ -96,7 +95,7 @@ while True:
         is_damaged = classes[i]
 
         # 손상된 경우
-        if is_damaged == 0:
+        if is_damaged == 1:
             try:
                 with torch.no_grad():
                     restored = unet_model(unet_input_image)
