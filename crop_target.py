@@ -4,7 +4,7 @@ import torch
 from torchvision import transforms
 from PIL import Image
 import numpy as np
-
+#----
 # ----------------- 모델 로딩 -----------------
 # YOLO 모델
 model = YOLO('yolov8n.pt')
