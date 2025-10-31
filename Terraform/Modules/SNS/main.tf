@@ -1,5 +1,11 @@
 data "aws_caller_identity" "current" {}
 
+resource "random_string" "suffix" {
+  length  = 8
+  special = false
+  upper   = false
+}
+
 locals {
     region = "ap-northeast-2"
     name   = "ex-${basename(path.cwd)}"
@@ -81,7 +87,7 @@ module "sns_topic" {
 }
 
 resource "aws_iam_role" "sns_feedback" {
-    name = "${local.name}-sns-feedback-role"
+    name = "fcmates-sns-feedback-role-${random_string.suffix.result}"
 
     assume_role_policy = jsonencode({
         Version = "2012-10-17"

@@ -2,8 +2,11 @@ locals {
     name = "FCMates-EC2-Instance"
 
     tags = {
-        Terraform   = "true"
-        Environment = "dev"
+        Terraform     = "true"
+        Environment   = "dev"
+        BackupEnabled = "true"  # AWS Backup에서 사용할 태그
+        Project       = "FCMates"
+        Component     = "Compute"
     }
 }
 

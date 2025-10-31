@@ -163,6 +163,10 @@ module "s3_bucket" {
     ]
 
     tags = {
-        Owner = "FCMates"
+        Owner         = "FCMates"
+        Environment   = "dev"
+        BackupEnabled = "true"  # AWS Backup에서 사용할 태그
+        Project       = "FCMates"
+        Component     = "Storage"
     }
 }

@@ -22,8 +22,8 @@ locals {
 }
 
 resource "aws_eip" "nat" {
-    # 가져올 서브넷의 수
-    count = length(local.azs)
+    # NAT Gateway를 1개만 사용하여 EIP 절약
+    count = 1
 
     tags = merge(local.tags, {
     Name = "nat-eip-${count.index + 1}"
@@ -60,8 +60,8 @@ module "vpc" {
     # VPC 새로 생성 시 새 IP 할당되고, VPC 파괴 시 해당 IP 해제
     # 따라서 VPC 재생성시 동일한 IP 유지하는 것이 편리
     enable_nat_gateway = true
-    single_nat_gateway  = false
-    one_nat_gateway_per_az = true
+    single_nat_gateway  = true  # 단일 NAT Gateway 사용 (비용 절약)
+    one_nat_gateway_per_az = false
     reuse_nat_ips       = true                    # <= Skip creation of EIPs for the NAT Gateways
     external_nat_ip_ids = aws_eip.nat[*].id   # <= IPs specified here as input to the module
 

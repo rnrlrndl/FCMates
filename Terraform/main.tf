@@ -84,9 +84,98 @@ module "sns" {
     source = "./Modules/SNS"
 
     kms_key_id = module.kms.key_id
+}
 
-    # 태그나 리전은 상위 locals를 활용하거나 직접 명시
-    providers = {
-        aws = aws
+# Backup
+module "backup" {
+    source = "./Modules/Backup"
+
+    # 다른 모듈들이 생성된 후에 백업 설정
+    depends_on = [module.ec2, module.s3, module.kms, module.autoscaling]
+
+    # KMS 키 설정
+    kms_key_arn = module.kms.key_arn
+
+    # 백업 대상 리소스 ARN 목록
+    backup_resources = [
+        module.ec2.ec2_instance_arn,  # EC2 인스턴스
+        module.s3.s3_bucket_arn       # S3 버킷
+        # Auto Scaling Group의 인스턴스들은 태그 기반으로 자동 선택됨
+    ]
+
+    # 백업 제외 리소스 (필요시)
+    not_resources = []
+
+    # 태그 기반 선택 조건 (BackupEnabled=true 태그가 있는 리소스만 백업)
+    selection_conditions = {
+        string_equals = [
+            {
+                key   = "aws:ResourceTag/BackupEnabled"
+                value = "true"
+            }
+        ]
+        string_like      = []
+        string_not_equals = []
+        string_not_like   = []
+    }
+
+    # 백업 스케줄 설정 (한국 시간 고려)
+    daily_backup_schedule  = "cron(0 17 ? * * *)"   # 매일 새벽 2시 (UTC+9 기준)
+    weekly_backup_schedule = "cron(0 18 ? * SUN *)" # 매주 일요일 새벽 3시 (UTC+9 기준)
+
+    # 보존 정책
+    daily_cold_storage_after  = 30   # 30일 후 콜드 스토리지
+    daily_delete_after        = 150   # 90일 후 삭제
+    weekly_cold_storage_after = 90   # 90일 후 콜드 스토리지  
+    weekly_delete_after       = 365  # 1년 후 삭제
+
+    # 태그 설정
+    tags = {
+        Environment = "dev"
+        Project     = "FCMates"
+        Component   = "Backup"
+    }
+}
+
+# Auto Scaling
+module "autoscaling" {
+    source = "./Modules/AutoScaling"
+
+    # VPC와 EC2가 생성된 후에 Auto Scaling 설정
+    depends_on = [module.vpc, module.ec2]
+
+    # VPC 설정
+    vpc_id     = module.vpc.vpc_id
+    subnet_ids = module.vpc.private_subnets  # Private 서브넷에 인스턴스 생성
+
+    # Auto Scaling 설정
+    name_prefix      = "fcmates-asg"
+    min_size         = 1
+    max_size         = 3
+    desired_capacity = 2
+
+    # 인스턴스 설정
+    instance_type    = "t3.micro"
+    ami_id          = data.aws_ami.ubuntu.id  # Ubuntu AMI 사용
+    key_name        = "FCMates"
+
+    # 스케일링 정책
+    target_cpu_utilization = 70
+
+    # 보안 설정
+    ssh_cidr_blocks = module.vpc.vpc_cidr_block
+
+    # 알림 설정
+    enable_notifications = true
+    sns_topic_arn       = module.sns.sns_topic_arn
+
+    # AWS 리전
+    aws_region = "ap-northeast-2"
+
+    # 태그 설정
+    tags = {
+        Environment = "dev"
+        Project     = "FCMates"
+        Component   = "AutoScaling"
     }
 }
