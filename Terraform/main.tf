@@ -74,12 +74,16 @@ module "cloudwatch" {
     sns_topic_arn = module.sns.sns_topic_arn
 }
 
+# KMS
+module "kms" {
+    source = "./Modules/KMS"
+}
+
 # SNS
 module "sns" {
     source = "./Modules/SNS"
 
-    # CloudWatch 알람과 연동되므로 CloudWatch 생성 후에 실행
-    depends_on = [module.cloudwatch]
+    kms_key_id = module.kms.key_id
 
     # 태그나 리전은 상위 locals를 활용하거나 직접 명시
     providers = {
