@@ -21,14 +21,15 @@ locals {
     }
 }
 
-resource "aws_eip" "nat" {
-    # NAT Gateway를 1개만 사용하여 EIP 절약
-    count = 1
+# EIP 제한으로 인해 주석 처리 - VPC 모듈이 자동으로 생성
+# resource "aws_eip" "nat" {
+#     # NAT Gateway를 1개만 사용하여 EIP 절약
+#     count = 1
 
-    tags = merge(local.tags, {
-    Name = "nat-eip-${count.index + 1}"
-    })
-}
+#     tags = merge(local.tags, {
+#     Name = "nat-eip-${count.index + 1}"
+#     })
+# }
 
 module "vpc" {
     source = "terraform-aws-modules/vpc/aws"
@@ -62,8 +63,8 @@ module "vpc" {
     enable_nat_gateway = true
     single_nat_gateway  = true  # 단일 NAT Gateway 사용 (비용 절약)
     one_nat_gateway_per_az = false
-    reuse_nat_ips       = true                    # <= Skip creation of EIPs for the NAT Gateways
-    external_nat_ip_ids = aws_eip.nat[*].id   # <= IPs specified here as input to the module
+    reuse_nat_ips       = false  # EIP 제한으로 인해 자동 생성 사용
+    # external_nat_ip_ids = aws_eip.nat[*].id   # EIP 제한으로 인해 주석 처리
 
     # VPN Gateway 필요 없으면 false로 설정 가능
     enable_vpn_gateway = false

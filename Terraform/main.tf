@@ -179,3 +179,68 @@ module "autoscaling" {
         Component   = "AutoScaling"
     }
 }
+
+# Lambda (복구 자동화)
+module "lambda" {
+    source = "./Modules/Lambda"
+
+    # 다른 모듈들이 생성된 후에 Lambda 설정
+    depends_on = [module.ec2, module.s3, module.cloudwatch, module.sns, module.autoscaling]
+
+    # 기본 설정
+    name_prefix = "fcmates"
+    aws_region  = "ap-northeast-2"
+
+    # 연동할 서비스 정보
+    ec2_instance_id = module.ec2.ec2_instance_id
+    s3_bucket_name  = "fcmates-bucket"
+    sns_topic_arn   = module.sns.sns_topic_arn
+
+    # Lambda 함수들 정의
+    lambda_functions = {
+        "ec2-recovery" = {
+            source_code = file("${path.module}/Modules/Lambda/ec2_recovery.py")
+            timeout     = 300
+            environment_variables = {
+                CPU_THRESHOLD    = "90"
+                ENABLE_SNAPSHOT  = "true"
+            }
+        }
+        
+        "s3-cleanup" = {
+            source_code = file("${path.module}/Modules/Lambda/s3_cleanup.py")
+            timeout     = 600
+            environment_variables = {
+                S3_CLEANUP_DAYS = "30"
+                DRY_RUN        = "false"
+            }
+        }
+        
+        "cloudwatch-response" = {
+            source_code = file("${path.module}/Modules/Lambda/cloudwatch_response.py")
+            timeout     = 180
+            environment_variables = {
+                AUTO_SCALING_ENABLED = "true"
+                MAX_SCALE_OUT        = "3"
+            }
+        }
+    }
+
+    # 스케줄 설정
+    s3_cleanup_schedule = "cron(0 6 * * ? *)"  # 매일 오전 6시 (UTC) = 한국 시간 15시
+
+    # 로그 설정
+    log_retention_days = 14
+
+    # 복구 설정
+    enable_ec2_auto_recovery = true
+    enable_s3_cleanup       = true
+    s3_cleanup_days         = 30
+
+    # 태그 설정
+    tags = {
+        Environment = "dev"
+        Project     = "FCMates"
+        Component   = "Lambda"
+    }
+}

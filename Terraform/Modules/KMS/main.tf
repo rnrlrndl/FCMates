@@ -2,8 +2,8 @@ module "kms" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 4.0"
 
-  aliases     = ["ex-sns"]
-  description = "KMS key to encrypt topic"
+  # aliases 제거하여 충돌 방지 - Key ARN으로 직접 참조
+  description = "KMS key to encrypt FCMates SNS topic"
 
   # Policy
   key_statements = [
@@ -22,6 +22,8 @@ module "kms" {
   ]
 
   tags = {
-    name = "ex-sns"
+    name = "fcmates-sns"
+    Environment = "dev"
+    Project = "FCMates"
   }
 }
