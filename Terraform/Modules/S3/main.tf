@@ -26,8 +26,14 @@ module "log_bucket" {
     # 접근 로그 수집을 허용 (다른 S3 버킷이 로그를 이 버킷으로 전송할 수 있게 함)
     attach_access_log_delivery_policy = true
 
-    # 로그 접근 정책 -> 내 AWS 계정만 접근 가능
+    # 로그 접근 정책: 내 AWS 계정만 접근 가능
     access_log_delivery_policy_source_accounts = [data.aws_caller_identity.current.account_id]
+
+    # CloudTrail, WAF, LB 로그 정책은 불필요하므로 제거
+    # attach_elb_log_delivery_policy        = false
+    # attach_lb_log_delivery_policy         = false
+    # attach_cloudtrail_log_delivery_policy = false
+    # attach_waf_log_delivery_policy        = false
 
     tags = {
         Name        = "fcmates-log-bucket"
@@ -51,11 +57,11 @@ module "s3_bucket" {
     control_object_ownership = true
     object_ownership         = "BucketOwnerPreferred"
 
-    # HTTP 접근 차단, TLS 최신버전 강제, 암호화 강제
-    attach_deny_insecure_transport_policy     = true   
-    attach_require_latest_tls_policy          = true    
+    # HTTP 접근 차단 + TLS 최신버전 강제 + 암호화 강제
+    attach_deny_insecure_transport_policy     = true    # HTTPS만 허용
+    attach_require_latest_tls_policy          = true    # TLS 1.2 이상만 허용
 
-    # 암호화 일관성 유지
+    # 암호화 일관성 유지 (KMS 암호화 강제)
     attach_deny_unencrypted_object_uploads    = true    # 암호화되지 않은 업로드 차단
     attach_deny_incorrect_kms_key_sse         = true    # 지정된 KMS 키 외 사용 금지
     allowed_kms_key_arn                       = aws_kms_key.objects.arn  # 허용된 KMS 키

@@ -1,5 +1,6 @@
+# ===========================
 # VPC 기본 정보
-
+# ===========================
 output "vpc_id" {
   description = "The ID of the VPC"
   value       = module.vpc.vpc_id
@@ -30,8 +31,9 @@ output "vpc_owner_id" {
   value       = module.vpc.vpc_owner_id
 }
 
+# ===========================
 # Subnets
-
+# ===========================
 output "public_subnets" {
   description = "List of IDs of public subnets"
   value       = module.vpc.public_subnets
@@ -52,8 +54,9 @@ output "private_subnets_cidr_blocks" {
   value       = module.vpc.private_subnets_cidr_blocks
 }
 
+# ===========================
 # Route Tables
-
+# ===========================
 output "public_route_table_ids" {
   description = "List of IDs of public route tables"
   value       = module.vpc.public_route_table_ids
@@ -64,8 +67,9 @@ output "private_route_table_ids" {
   value       = module.vpc.private_route_table_ids
 }
 
+# ===========================
 # NAT / Internet Gateway
-
+# ===========================
 output "natgw_ids" {
   description = "List of NAT Gateway IDs"
   value       = module.vpc.natgw_ids

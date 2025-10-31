@@ -48,7 +48,7 @@ module "vpc" {
 
     private_subnets = [
         "10.0.11.0/24", 
-        "10.0.12.0/24", 
+        "10.0.12.0/24",
         "10.0.13.0/24", 
     ]  
 
@@ -62,8 +62,8 @@ module "vpc" {
     enable_nat_gateway = true
     single_nat_gateway  = false
     one_nat_gateway_per_az = true
-    reuse_nat_ips       = true                    
-    external_nat_ip_ids = aws_eip.nat[*].id   
+    reuse_nat_ips       = true                    # <= Skip creation of EIPs for the NAT Gateways
+    external_nat_ip_ids = aws_eip.nat[*].id   # <= IPs specified here as input to the module
 
     # VPN Gateway 필요 없으면 false로 설정 가능
     enable_vpn_gateway = false

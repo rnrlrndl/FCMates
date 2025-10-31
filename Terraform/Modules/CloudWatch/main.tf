@@ -16,10 +16,13 @@ resource "aws_cloudwatch_metric_alarm" "ec2_cpu_high" {
   statistic           = "Average"
   threshold           = var.cpu_threshold
   alarm_description   = "This metric monitors EC2 CPU utilization"
-  alarm_actions       = var.alarm_actions
+  # alarm_actions       = var.alarm_actions
+
+  alarm_actions = var.sns_topic_arn != null ? [var.sns_topic_arn] : []
+  ok_actions    = var.sns_topic_arn != null ? [var.sns_topic_arn] : []
 
   dimensions = {
-    InstanceId = var.ec2_instance_id
+      InstanceId = var.ec2_instance_id
   }
 
   tags = merge(local.tags, {
@@ -39,7 +42,10 @@ resource "aws_cloudwatch_metric_alarm" "ec2_memory_high" {
   statistic           = "Average"
   threshold           = var.memory_threshold
   alarm_description   = "This metric monitors EC2 memory utilization"
-  alarm_actions       = var.alarm_actions
+  # alarm_actions       = var.alarm_actions
+
+  alarm_actions = var.sns_topic_arn != null ? [var.sns_topic_arn] : []
+  ok_actions    = var.sns_topic_arn != null ? [var.sns_topic_arn] : []
 
   dimensions = {
     InstanceId = var.ec2_instance_id
@@ -62,7 +68,10 @@ resource "aws_cloudwatch_metric_alarm" "ec2_disk_high" {
   statistic           = "Average"
   threshold           = var.disk_threshold
   alarm_description   = "This metric monitors EC2 disk utilization"
-  alarm_actions       = var.alarm_actions
+  # alarm_actions       = var.alarm_actions
+
+  alarm_actions = var.sns_topic_arn != null ? [var.sns_topic_arn] : []
+  ok_actions    = var.sns_topic_arn != null ? [var.sns_topic_arn] : []
 
   dimensions = {
     InstanceId = var.ec2_instance_id
@@ -86,7 +95,10 @@ resource "aws_cloudwatch_metric_alarm" "ec2_status_check_failed" {
   statistic           = "Average"
   threshold           = 0
   alarm_description   = "This metric monitors EC2 status checks"
-  alarm_actions       = var.alarm_actions
+  # alarm_actions       = var.alarm_actions
+
+  alarm_actions = var.sns_topic_arn != null ? [var.sns_topic_arn] : []
+  ok_actions    = var.sns_topic_arn != null ? [var.sns_topic_arn] : []
 
   dimensions = {
     InstanceId = var.ec2_instance_id
@@ -109,7 +121,10 @@ resource "aws_cloudwatch_metric_alarm" "s3_object_count" {
   statistic           = "Average"
   threshold           = var.s3_object_count_threshold
   alarm_description   = "This metric monitors S3 object count"
-  alarm_actions       = var.alarm_actions
+  # alarm_actions       = var.alarm_actions
+
+  alarm_actions = var.sns_topic_arn != null ? [var.sns_topic_arn] : []
+  ok_actions    = var.sns_topic_arn != null ? [var.sns_topic_arn] : []
 
   dimensions = {
     BucketName = var.s3_bucket_name
@@ -133,7 +148,10 @@ resource "aws_cloudwatch_metric_alarm" "s3_bucket_size" {
   statistic           = "Average"
   threshold           = var.s3_bucket_size_threshold
   alarm_description   = "This metric monitors S3 bucket size"
-  alarm_actions       = var.alarm_actions
+  # alarm_actions       = var.alarm_actions
+
+  alarm_actions = var.sns_topic_arn != null ? [var.sns_topic_arn] : []
+  ok_actions    = var.sns_topic_arn != null ? [var.sns_topic_arn] : []
 
   dimensions = {
     BucketName = var.s3_bucket_name
