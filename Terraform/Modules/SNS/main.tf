@@ -31,19 +31,8 @@ module "sns_topic" {
     # 비활성화 (실시간 알림용 구조)
     # FIFO로 토픽 생성 
     fifo_topic                  = false
-    # 처리량 단위 (토픽 or 그룹)
-    # fifo_throughput_scope       = "MessageGroup"
     # 내용이 같으면 중복 메시지 제거
     content_based_deduplication = false
-
-    # delivery_policy = jsonencode({
-    #     "lambda": {
-    #         "defaultHealthyRetryPolicy": {
-    #         "numRetries": 5,        # 최대 5회 재시도
-    #         },
-    #         "disableSubscriptionOverrides": true
-    #     }
-    # })
 
     create_topic_policy         = true      # Terraform이 SNS 토픽용 IAM 정책을 자동 생성하도록 설정
     enable_default_topic_policy = true      # AWS가 제공하는 기본 토픽 정책을 함께 병합하도록 설정
@@ -67,14 +56,6 @@ module "sns_topic" {
             }]
         }
     }
-
-    # SNS → Lambda 직접 연결
-    # subscriptions = {
-    #     lambda = {
-    #         protocol = "lambda"
-    #         endpoint = aws_lambda_function.sns_handler.arn
-    #     }
-    # }
 
     # SNS가 Lambda 호출 결과를 CloudWatch에 기록
     lambda_feedback = {

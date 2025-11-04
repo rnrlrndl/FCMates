@@ -29,12 +29,6 @@ module "log_bucket" {
     # 로그 접근 정책: 내 AWS 계정만 접근 가능
     access_log_delivery_policy_source_accounts = [data.aws_caller_identity.current.account_id]
 
-    # CloudTrail, WAF, LB 로그 정책은 불필요하므로 제거
-    # attach_elb_log_delivery_policy        = false
-    # attach_lb_log_delivery_policy         = false
-    # attach_cloudtrail_log_delivery_policy = false
-    # attach_waf_log_delivery_policy        = false
-
     tags = {
         Name        = "fcmates-log-bucket"
         Environment = "dev"

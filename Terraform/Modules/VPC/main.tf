@@ -21,16 +21,6 @@ locals {
     }
 }
 
-# EIP 제한으로 인해 주석 처리 - VPC 모듈이 자동으로 생성
-# resource "aws_eip" "nat" {
-#     # NAT Gateway를 1개만 사용하여 EIP 절약
-#     count = 1
-
-#     tags = merge(local.tags, {
-#     Name = "nat-eip-${count.index + 1}"
-#     })
-# }
-
 module "vpc" {
     source = "terraform-aws-modules/vpc/aws"
 
