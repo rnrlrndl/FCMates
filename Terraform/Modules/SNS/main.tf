@@ -56,6 +56,13 @@ module "sns_topic" {
             }]
         }
     }
+# 이메일 구독 설정 - 하나의 이메일만 사용
+    subscriptions = {
+        email_notification = {
+            protocol = "email"
+            endpoint = var.notification_email
+        }
+    }
 
     # SNS가 Lambda 호출 결과를 CloudWatch에 기록
     lambda_feedback = {
@@ -106,4 +113,5 @@ resource "aws_iam_role_policy" "sns_feedback_policy" {
             }
         ]
     })
+
 }
