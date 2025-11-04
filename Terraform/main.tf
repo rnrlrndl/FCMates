@@ -84,6 +84,8 @@ module "sns" {
     source = "./Modules/SNS"
 
     kms_key_id = module.kms.key_id
+# 여기서 본인 이메일 주소를 설정하세요!
+    notification_email = "rndl28@naver.com"  #실제 이메일로 변경
 }
 
 # Backup
@@ -243,4 +245,5 @@ module "lambda" {
         Project     = "FCMates"
         Component   = "Lambda"
     }
+
 }
